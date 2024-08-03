@@ -69,8 +69,8 @@ def bag_read():
         i += 1
 
         if (topic == "/right_cam/image_rect_color/compressed"):
-            print(type(msg), "     Right camera image processing...")
-            print(type(msg.data)) # bytes format
+            # print(type(msg), "     Right camera image processing...")
+            # print(type(msg.data)) # bytes format
 
             # decode the image using opencv and dispay it
             msg_np = np.frombuffer(msg.data, dtype='uint8')
@@ -79,13 +79,47 @@ def bag_read():
             raw_img = cv2.imdecode(msg_np,cv2.IMREAD_COLOR)
             # print("RWA Message shape : ", raw_img.shape, "Type : ", type(raw_img))
 
-            cv2.imshow('RAW Image', raw_img)
-            cv2.waitKey(5)  # keep the window for atleast a second to look for images
+            # cv2.imshow('RAW Image', raw_img)
+            # cv2.waitKey(100)  # keep the window for atleast a second to look for images
 
             # perform classification
-            # right_cam_results = obj_classification_cam_model(raw_img)
+            right_cam_results = obj_classification_cam_model(raw_img)
             # for r in right_cam_results:
             #     print(f"Detected {len(r)} objects in image")
+
+            for result in right_cam_results:
+                # print(result)
+                boxes = result.boxes.cpu().numpy()      # stores the detection summary
+                classes = result.names                  # stores the dictionary of classes
+                # print("BOXES : ", boxes)
+                # print("CLASSES : ", classes)
+
+                for box in boxes:
+                    # print("\n\n\nBOX : ", box)
+                    # print("BOx XYXY : ", type(box.xyxy), box.xyxy.shape)
+                    x1, y1, x2, y2 = box.xyxy.reshape(-1) # rehape array of type (1,4) to (4,)
+                    # print(f"Co ordinates : {x1}, {y1}, {x2}, {y2}")
+                    # print(type(x1), type(x2), type(y1), type(y2))
+                    confidence = box.conf.item()
+                    # print("Confidence : ", confidence)
+                    class_id = box.cls.item()
+                    label = f"{classes[class_id]} {confidence:.2f}"
+
+                     # Draw bounding box and label
+                    color = (0, 255, 0)
+                    font = cv2.FONT_HERSHEY_SIMPLEX
+
+                    x1, y1, x2, y2 = int(x1), int(y1), int(x2),int(y2)
+
+                    # draw a rectangle and visuzlaise it
+                    cv2.rectangle(raw_img, ( x1, y1 ), ( x2, y2 ), color, 1)
+                    
+                    cv2.putText(raw_img, label, (x1, y1 - 10), font, 0.5, color, thickness=1, lineType=cv2.LINE_AA)
+
+               
+            # Display the image with bounding boxes
+            cv2.imshow("YOLO Inference", raw_img)
+            cv2.waitKey(100)  # Wait for 1 ms for the window to update
 
             # print(f"Right camera detections : {right_cam_results}")
             
