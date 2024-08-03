@@ -47,7 +47,8 @@ def bag_read():
 
     # specify rosbag
     try:
-        bag = rosbag.Bag("/home/asl/Muni/workspace/fused_l_cam_jul9.bag")
+        # bag = rosbag.Bag("/home/asl/Muni/workspace/fused_l_cam_jul9.bag")
+        bag = rosbag.Bag("/home/asl/Muni/datasets/kitti/online/kitti_2011_09_26_drive_0002_synced.bag")
         '''
             Topics present in the bag
             1. /dominant_obj_info                       ----- custom_msgs/object_info
@@ -64,20 +65,22 @@ def bag_read():
     # ================================================================================================
     i = 0.
     # read data from the ROSBag
-    for topic, msg, ts in bag.read_messages(topics = ['/right_cam/image_rect_color/compressed']):
+    for topic, msg, ts in bag.read_messages(topics = ['/kitti/camera_color_right/image_raw']):
         print(type(msg), topic, ts)
         i += 1
 
-        if (topic == "/right_cam/image_rect_color/compressed"):
+        if (topic == "/kitti/camera_color_right/image_raw"):
             # print(type(msg), "     Right camera image processing...")
             # print(type(msg.data)) # bytes format
 
             # decode the image using opencv and dispay it
-            msg_np = np.frombuffer(msg.data, dtype='uint8')
+            # msg_np = np.frombuffer(msg.data, dtype='uint8')
             # print("Message shape : ", msg_np.shape, "Type : ", type(msg_np))
             
-            raw_img = cv2.imdecode(msg_np,cv2.IMREAD_COLOR)
-            # print("RWA Message shape : ", raw_img.shape, "Type : ", type(raw_img))
+            # raw_img = cv2.imdecode(msg_np,cv2.IMREAD_COLOR)
+            raw_img = np.frombuffer(msg.data, dtype='uint8').reshape(375,-1,3)
+            print("RWA Message shape : ", raw_img.shape, "Type : ", type(raw_img))
+            out_img = np.copy(raw_img)
 
             # cv2.imshow('RAW Image', raw_img)
             # cv2.waitKey(100)  # keep the window for atleast a second to look for images
@@ -112,14 +115,14 @@ def bag_read():
                     x1, y1, x2, y2 = int(x1), int(y1), int(x2),int(y2)
 
                     # draw a rectangle and visuzlaise it
-                    cv2.rectangle(raw_img, ( x1, y1 ), ( x2, y2 ), color, 1)
+                    cv2.rectangle(out_img, ( x1, y1 ), ( x2, y2 ), color, 1)
                     
-                    cv2.putText(raw_img, label, (x1, y1 - 10), font, 0.5, color, thickness=1, lineType=cv2.LINE_AA)
+                    cv2.putText(out_img, label, (x1, y1 - 10), font, 0.5, color, thickness=1, lineType=cv2.LINE_AA)
 
                
             # Display the image with bounding boxes
-            cv2.imshow("YOLO Inference", raw_img)
-            cv2.waitKey(100)  # Wait for 1 ms for the window to update
+            cv2.imshow("YOLO Inference", out_img)
+            cv2.waitKey(1000)  # Wait for 1 ms for the window to update
 
             # print(f"Right camera detections : {right_cam_results}")
             
