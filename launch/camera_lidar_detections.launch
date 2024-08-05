@@ -1,0 +1,5 @@
+<launch>
+  <node name="object_detection" pkg="object_detection" type="detections.py" output="screen">
+    <param name="yaml_file" value="$(find object_detection)/config/projection_matrices.yaml"/>
+  </node>
+</launch>
